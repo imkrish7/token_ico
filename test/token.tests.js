@@ -58,5 +58,76 @@ contract("Token sale contract Testing", function(accounts){
 		assert.equal(balanceafter.toNumber(), (balance.toNumber() - 9999))
 	})
 
+	it("Approves tokens for delegated dummy transfer", async function(){
+		const result = await this.token.approve.call(accounts[1],100)
+		assert.equal(result, true)
+	})
 
+	it("Approves tokens for delegated transfer", async function(){
+		const result = await this.token.approve(accounts[1],100)
+		const allowance = await this.token.allowance(accounts[0], accounts[1])
+		assert.equal(result.logs.length, 1)
+		assert.equal(result.logs[0].event, "Approval")
+		assert.equal(result.logs[0].args._value, 100)
+		assert.equal(result.logs[0].args._owner, accounts[0])
+		assert.equal(result.logs[0].args._spender,accounts[1])
+		assert.equal(allowance.toNumber(), 100)
+	})
+
+	it("Approves tokens can not approve  transfer larger than amount", async function(){
+		try{
+		const fromAccount = accounts[2]
+		const toAccount = accounts[3]
+		const spendingAccount = accounts[4]
+		const result = await this.token.transfer.call(fromAccount, 100, { from: accounts[0]})
+		const approve = await this.token.approve.call(spendingAccount, 10, { from: fromAccount})
+		const transferFrom = await this.token.transferFrom.call(fromAccount, toAccount, 9999, { from: spendingAccount })
+		}catch(error){
+			assert(error.message.indexOf('revert')>=0)
+		}
+	})
+
+	it("Approves tokens can not approve  transfer larger than amount", async function(){
+		try{
+		const fromAccount = accounts[2]
+		const toAccount = accounts[3]
+		const spendingAccount = accounts[4]
+		const result = await this.token.transfer.call(fromAccount, 100, { from: accounts[0]})
+		const approve = await this.token.approve.call(spendingAccount, 10, { from: fromAccount})
+		const transferFrom = await this.token.transferFrom.call(fromAccount, toAccount, 20, { from: spendingAccount })
+		}catch(error){
+			assert(error.message.indexOf('revert')>=0)
+		}
+	})
+
+	it("Approves tokens  transfer from", async function(){
+
+		const fromAccount = accounts[2]
+		const toAccount = accounts[3]
+		const spendingAccount = accounts[4]
+		const result = await this.token.transfer.call(fromAccount, 100, { from: accounts[0]})
+		const approve = await this.token.approve.call(spendingAccount, 10, { from: fromAccount})
+		const transferFrom = await this.token.transferFrom.call(fromAccount, toAccount, 10 , { from: spendingAccount })
+		console.log(transferFrom)
+		assert(transferFrom, true);
+	})
+
+	it("Approves tokens  transfer from", async function(){
+
+		const fromAccount = accounts[2]
+		const toAccount = accounts[3]
+		const spendingAccount = accounts[4]
+		const result = await this.token.transfer(fromAccount, 100, { from: accounts[0]})
+		const approve = await this.token.approve(spendingAccount, 10, { from: fromAccount})
+		const transferFrom = await this.token.transferFrom(fromAccount, toAccount, 10 , { from: spendingAccount })
+		const balanceOfFrom = await this.token.balanceOf(fromAccount);
+		const balanceOfTo = await this.token.balanceOf(toAccount);
+		assert.equal(transferFrom.logs.length, 1)
+		assert.equal(transferFrom.logs[0].event, "Transfer")
+		assert.equal(transferFrom.logs[0].args._value, 10)
+		assert.equal(transferFrom.logs[0].args._from, fromAccount)
+		assert.equal(transferFrom.logs[0].args._to,toAccount)
+		assert.equal(balanceOfFrom.toNumber(), 90)
+		assert.equal(balanceOfTo.toNumber(), 10)
+	})
 })
